@@ -1,31 +1,48 @@
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 // HW-1
 describe("CERC20", function () {
-  it("should be able to deploy CErc20 contract successfully", async function () {
-    // 1. ----------------------------------------------------------------
+  async function deployComptrollerFixture() {
     const comptrollFactory = await ethers.getContractFactory("Comptroller");
     const comptroller = await comptrollFactory.deploy();
-    await comptroller.deployed();
-    // console.log(`Successfully contract to ${comptroller.address}`);
 
-    const erc20Factory = await ethers.getContractFactory("MTKToken");
+    await comptroller.deployed();
+
+    return { comptroller };
+  }
+
+  async function deployErc20Fixture() {
+    const erc20Factory = await ethers.getContractFactory("Erc20Token");
     const erc20 = await erc20Factory.deploy(
-      ethers.utils.parseUnits("10000", 18),
+      ethers.utils.parseUnits("10000", 18), // ethers.utils.parseUnits("10000", 18); // 在 metamask 裡會看到10000
       "myToken",
       "MTK"
     );
-    // ethers.utils.parseUnits("10000", 18); // 在metamask裡會看到10000
-    await erc20.deployed();
-    // console.log(`Successfully contract to ${erc20.address}`);
 
+    await erc20.deployed();
+
+    return { erc20 };
+  }
+
+  async function deployInterestRateModelFixture() {
     const interestRateModelFactory = await ethers.getContractFactory(
       "WhitePaperInterestRateModel"
     );
     const interestRateModel = await interestRateModelFactory.deploy(0, 0);
     await interestRateModel.deployed();
-    //   console.log(`Successfully contract to ${erc20.address}`);
+
+    return { interestRateModel };
+  }
+
+  it("should be able to deploy CErc20 contract and mint/redeem successfully", async function () {
+    // 1. ----------------------------------------------------------------
+    const { comptroller } = await loadFixture(deployComptrollerFixture);
+    const { erc20 } = await loadFixture(deployErc20Fixture);
+    const { interestRateModel } = await loadFixture(
+      deployInterestRateModelFixture
+    );
 
     const cErc20Factory = await ethers.getContractFactory("CErc20"); // or use CErc20Immutable.sol
     const cErc20 = await cErc20Factory.deploy();
@@ -42,7 +59,6 @@ describe("CERC20", function () {
       "MTK",
       18
     );
-    // console.log(`Successfully contract to ${cErc20.address}`);
 
     // 2. ----------------------------------------------------------------
     const MINT_AMOUNT = ethers.utils.parseUnits("100", 18);
