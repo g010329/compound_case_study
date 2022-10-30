@@ -1,6 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-
-const privateKey = "";
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -15,22 +14,8 @@ module.exports = {
   },
   networks: {
     goerli: {
-      url: "",
-      accounts: [privateKey],
-    },
-    // archive node
-    hardhat: {
-      forking: {
-        url: "",
-        blockNumber: 15759400,
-        enabled: true,
-      },
-      allowUnlimitedContractSize: true,
-    },
-  },
-  etherscan: {
-    apiKey: {
-      goerli: "",
+      url: process.env.PROVIDER_URL,
+      accounts: [process.env.PRIVATE_KEY],
     },
   },
 };
