@@ -6,12 +6,14 @@ const { ethers } = require("hardhat");
 describe("W12", function () {
   const AMOUNT_200 = ethers.utils.parseUnits("200", 18);
   const AMOUNT_100 = ethers.utils.parseUnits("100", 18);
+  const AMOUNT_75 = ethers.utils.parseUnits("75", 18);
   const AMOUNT_50 = ethers.utils.parseUnits("50", 18);
   const AMOUNT_40 = ethers.utils.parseUnits("40", 18);
   const AMOUNT_25 = ethers.utils.parseUnits("25", 18);
   const AMOUNT_20 = ethers.utils.parseUnits("20", 18);
   const AMOUNT_10 = ethers.utils.parseUnits("10", 18);
   const AMOUNT_1 = ethers.utils.parseUnits("1", 18);
+  const AMOUNT_0 = ethers.utils.parseUnits("0", 18);
 
   async function deployCompoundFixture() {
     [account0, account1, account2] = await ethers.getSigners();
@@ -225,7 +227,7 @@ describe("W12", function () {
     // 以上為第三題借貸場景 ------------------------------------------------------------
 
     // 4) 調整 token A 的 collateral factor，讓 user1 被 user2 清算
-    const PROTOCOL_SEIZE_SHARE = ethers.utils.parseUnits("0.03", 18);
+    // const PROTOCOL_SEIZE_SHARE = ethers.utils.parseUnits("0.03", 18);
     const LIQUIDATION_INCENTIVE = ethers.utils.parseUnits("1.08", 18);
     const CLOSE_FACTOR = ethers.utils.parseUnits("0.5", 18);
     const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.4", 18);
@@ -261,6 +263,8 @@ describe("W12", function () {
     // 發件人account2 清算借款人 account1 的抵押品，這邊假設一次清算最多50%
     // 被扣押的抵押品 25顆 cTokenB 被轉移給清算人 account2 (50 顆乘以 close factor50% = 25顆)，要來償還這10元的 shortfall
     // account2 要償還 $25 的 tokenA 給 cTokenA合約，並且 account2 會得到 $1*25*1.08 = $27 的 cTokenB
+    expect(await await tokenA.balanceOf(account2.address)).to.equal(AMOUNT_100);
+    expect(await await cTokenB.balanceOf(account2.address)).to.equal(AMOUNT_0);
     await cTokenA
       .connect(account2)
       .liquidateBorrow(
@@ -268,12 +272,18 @@ describe("W12", function () {
         ethers.utils.parseUnits("25", 18),
         cTokenB.address
       );
+    expect(await await tokenA.balanceOf(account2.address)).to.equal(AMOUNT_75);
+
+    console.log(
+      "account2' cTokenB after liquidateBorrow:",
+      await cTokenB.balanceOf(account2.address)
+    ); // 26.24400 TODO: 跟想像中的 27 不一樣，再確認
 
     // 查看 account1 在被 account2 清算完 50% 後的流動性
     // console.log(
     //   "查看 account1 在被 account2 清算完 50% 後的流動性：",
     //   await comptroller.getAccountLiquidity(account1.address)
-    // ); // 0, 4.2, 0
+    // ); // 0, 4.2, 0 TODO: 確認4.2怎麼來
   });
 
   it("5).should be able to liquidate after decreasing the oracle price of tokenB ", async function () {
