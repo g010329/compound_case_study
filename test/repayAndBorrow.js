@@ -151,39 +151,19 @@ describe("W12", function () {
     // 現在 account1 有 50 顆 tokenA，cTokenA 有 50 顆 tokenA
     expect(await tokenA.balanceOf(account1.address)).to.equal(AMOUNT_50);
     expect(await tokenA.balanceOf(cTokenA.address)).to.equal(AMOUNT_50);
-    // console.log(
-    //   "user1's cTokenA balance:",
-    //   ethers.utils.formatUnits(await cTokenA.balanceOf(account1.address), 18)
-    // );
-    // console.log(
-    //   "user1's tokenA balance:",
-    //   ethers.utils.formatUnits(await tokenA.balanceOf(account1.address), 18)
-    // );
-    // // TODO: test redeem
-    // console.log(
-    //   "user1's cTokenB balance:",
-    //   ethers.utils.formatUnits(await cTokenB.balanceOf(account1.address), 18)
-    // );
-    // TODO: 這裡可以接錯誤，在 accouont1 repay 前不能去 redeem 抵押的 cTokenB: RedeemComptrollerRejection(4)
+
+    // 測試在 accouont1 repay 前不能去 redeem 抵押的 cTokenB: RedeemComptrollerRejection(4)
     await expect(cTokenB.connect(account1).redeem(AMOUNT_1))
       .to.be.revertedWithCustomError(cTokenB, "RedeemComptrollerRejection")
       .withArgs(4);
-    // console.log(
-    //   "user1's cTokenB balance after redeem:",
-    //   ethers.utils.formatUnits(await cTokenB.balanceOf(account1.address), 18)
-    // );
-    // console.log(
-    //   "user1's tokenB balance:",
-    //   ethers.utils.formatUnits(await tokenB.balanceOf(account1.address), 18)
-    // );
-    // console.log(
-    //   "CTokenA's tokenA balance:",
-    //   ethers.utils.formatUnits(await tokenA.balanceOf(cTokenA.address), 18)
-    // );
-    // console.log("-----------");
 
-    // 模擬 account1 借出超過 $50 等值的 tokenA，會出現錯誤 // TODO: 可以接錯誤 BorrowComptrollerRejection(4)
+    // 測試 account1 借出超過 $50 等值的 tokenA，會出現錯誤: BorrowComptrollerRejection(4)
     // await cTokenA.connect(account1).borrow(ethers.utils.parseUnits("80", 18));
+    await expect(
+      cTokenA.connect(account1).borrow(ethers.utils.parseUnits("80", 18))
+    )
+      .to.be.revertedWithCustomError(cTokenB, "BorrowComptrollerRejection")
+      .withArgs(4);
 
     // 還款前查看 account1 的 tokenA 流動性
     // 這裡會回傳三個值(可能的錯誤代碼、帳戶流動性還有多少、帳戶抵押品短缺shoarfall)
@@ -250,7 +230,7 @@ describe("W12", function () {
     const CLOSE_FACTOR = ethers.utils.parseUnits("0.5", 18);
     const NEW_COLLATERAL_FACTOR = ethers.utils.parseUnits("0.4", 18);
     // 設定 CloseFactor 為 50%
-    await comptroller._setCloseFactor(CLOSE_FACTOR); // TODO: => 確認：所有的 token closeFactor 共用同一個值？
+    await comptroller._setCloseFactor(CLOSE_FACTOR);
     // 設定清算獎勵 LiquidationIncentive 為 108%
     await comptroller._setLiquidationIncentive(
       ethers.utils.parseUnits("1.08", 18)
@@ -261,10 +241,10 @@ describe("W12", function () {
       .approve(cTokenA.address, ethers.utils.parseUnits("10000", 18));
 
     // 查看 account1 在 借貸狀態下的流動性
-    console.log(
-      "查看 account1 在 借貸狀態下的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 0, 0
+    // console.log(
+    //   "查看 account1 在 借貸狀態下的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 0, 0
 
     // 調整 tokenB 的 collateral factor，讓 account1 被 account2 清算
     await comptroller._setCollateralFactor(
@@ -273,10 +253,10 @@ describe("W12", function () {
     ); // 此時可以借出的價值從 $50 變成 $40
 
     // 查看 account1 在抵押品的CollateralFactor從 50% 調低成 40% 後的流動性
-    console.log(
-      "查看 account1 在抵押品的CollateralFactor從 50% 調低成 40% 後的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 0, 10 會看到shortfall 為 10(50-40=10)，大於 0 可以被清算
+    // console.log(
+    //   "查看 account1 在抵押品的CollateralFactor從 50% 調低成 40% 後的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 0, 10 會看到shortfall 為 10(50-40=10)，大於 0 可以被清算
 
     // 發件人account2 清算借款人 account1 的抵押品，這邊假設一次清算最多50%
     // 被扣押的抵押品 25顆 cTokenB 被轉移給清算人 account2 (50 顆乘以 close factor50% = 25顆)，要來償還這10元的 shortfall
@@ -290,10 +270,10 @@ describe("W12", function () {
       );
 
     // 查看 account1 在被 account2 清算完 50% 後的流動性
-    console.log(
-      "查看 account1 在被 account2 清算完 50% 後的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 4.2, 0 TODO: 確認4.2怎麼來，還有此時account1可以在借貸多少價值，以及協議抽成多少、account2拿到多少清算獎勵
+    // console.log(
+    //   "查看 account1 在被 account2 清算完 50% 後的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 4.2, 0
   });
 
   it("5).should be able to liquidate after decreasing the oracle price of tokenB ", async function () {
@@ -354,22 +334,20 @@ describe("W12", function () {
       .approve(cTokenA.address, ethers.utils.parseUnits("10000", 18));
 
     // 查看 account1 在 借貸狀態下的流動性
-    console.log(
-      "查看 account1 在 借貸狀態下的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 0, 0
+    // console.log(
+    //   "查看 account1 在 借貸狀態下的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 0, 0
 
-    // TODO: 調整 oracle 中的 token B 的價格($100 改為 $20)，讓 account1 被 account2 清算
+    // 調整 oracle 中的 token B 的價格($100 改為 $20)，讓 account1 被 account2 清算
     await simplePriceOracle.setUnderlyingPrice(cTokenB.address, AMOUNT_20);
     // 此時抵押品的價值從 $100 -> $20*1 = $20，不足以償還原本 $50 的債務。系統會出現壞帳。
 
     // 查看 account1 在 抵押品價值跌到不足以償還債務時的流動性
-    console.log(
-      "查看 account1 在 抵押品價值跌到不足以償還債務時的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
-
-    // TODO: 可以測試清算太多時的錯誤
+    // console.log(
+    //   "查看 account1 在 抵押品價值跌到不足以償還債務時的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
 
     // 10 / 1.08 = 9.26 => account2 最多償還 9.26 的債務，才能拿到清算獎勵
     await cTokenA
@@ -380,15 +358,9 @@ describe("W12", function () {
         cTokenB.address
       );
 
-    console.log(
-      "查看 account1 在被 account2 清算完 50% 後的流動性：",
-      await comptroller.getAccountLiquidity(account1.address)
-    ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
-
-    // TODO: 確認 account1 有壞帳後，還能使用該 protocol 嗎
+    // console.log(
+    //   "查看 account1 在被 account2 清算完 50% 後的流動性：",
+    //   await comptroller.getAccountLiquidity(account1.address)
+    // ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
   });
-
-  // TODO: 設定平台抽成PROTOCOL_SEIZE_SHARE、確認下各操作後池子裡的狀態 interestRate 等等
-  // 每個操作後鏈上會有很多狀態改變，寫測試確認每個狀態的變化要寫到什麼程度
-  // TODO: 某些情境，可以不要第一次清算就清算完，而是只清算一部分讓該帳戶可以繼續被清算第二三次，想一下這個情境。以及在現實場景中，是不是都會第一次被清完？
 });
