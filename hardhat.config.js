@@ -13,9 +13,12 @@ module.exports = {
     },
   },
   networks: {
-    goerli: {
-      url: process.env.PROVIDER_URL,
-      accounts: [process.env.PRIVATE_KEY],
+    hardhat: {
+      forking: {
+        url: process.env.ALCHEMY_URL,
+        blockNumber: 15815693,
+      },
+      allowUnlimitedContractSize: true,
     },
   },
 };
