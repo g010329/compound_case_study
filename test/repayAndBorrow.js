@@ -283,7 +283,7 @@ describe("W12", function () {
     // console.log(
     //   "查看 account1 在被 account2 清算完 50% 後的流動性：",
     //   await comptroller.getAccountLiquidity(account1.address)
-    // ); // 0, 4.2, 0 TODO: 確認4.2怎麼來
+    // ); // 0, 4.2, 0 TODO: 確認4.2怎麼來，還有此時account1可以在借貸多少價值，以及協議抽成多少、account2拿到多少清算獎勵
   });
 
   it("5).should be able to liquidate after decreasing the oracle price of tokenB ", async function () {
@@ -359,6 +359,8 @@ describe("W12", function () {
     //   await comptroller.getAccountLiquidity(account1.address)
     // ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
 
+    // TODO: 可以測試清算太多時的錯誤
+
     // 10 / 1.08 = 9.26 => account2 最多償還 9.26 的債務，才能拿到清算獎勵
     await cTokenA
       .connect(account2)
@@ -373,4 +375,8 @@ describe("W12", function () {
     //   await comptroller.getAccountLiquidity(account1.address)
     // ); // 0, 0, 40 => 50元的債務 - 目前抵押品價值可借出10元 = 40元的債務shorfall
   });
+
+  // TODO: 設定平台抽成PROTOCOL_SEIZE_SHARE、確認下各操作後池子裡的狀態 interestRate 等等
+  // 每個操作後鏈上會有很多狀態改變，寫測試確認每個狀態的變化要寫到什麼程度
+  // TODO: 某些情境，可以不要第一次清算就清算完，而是只清算一部分讓該帳戶可以繼續被清算第二三次，想一下這個情境。以及在現實場景中，是不是都會第一次被清完？
 });
