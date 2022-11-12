@@ -193,18 +193,23 @@ describe("W13", function () {
     const repayAmount = borrowBalance * (50 / 100);
 
     // 4) account1 部署 閃電貸合約，並呼叫清算函式
-    let flashloanFactory = await ethers.getContractFactory("FlashLoanV2");
-    flashloan = await flashloanFactory
-      .connect(account1)
-      .deploy(
-        LENDING_POOL_ADDRESSES_PROVIDER,
-        UNISWAP_ROUTER,
-        cTokenA.address,
-        cTokenB.address,
-        owner.address,
-        repayAmount
-      );
+    let flashloanFactory = await ethers.getContractFactory("FlashLoan");
 
+    // flashLoan  (ILendingPool.sol)
+    await flashloan
+      .connect(account1)
+      .flashLoan(
+        flashloan.address,
+        [usdc.address],
+        [repayAmount.toString()],
+        [0],
+        "0x0000000000000000000000000000000000000000",
+        abi.encode(
+          ["address", "address", "address", "address"],
+          [owner.address, cTokenA.address, cTokenB.address, uni.address]
+        ),
+        0
+      );
     expect(await usdc.balanceOf(flashloan.address)).to.eq(0);
     await flashloan.connect(account1).flashLoan(USDC_ADDRESS, repayAmount);
     expect(await await usdc.balanceOf(flashloan.address)).to.gt(0); // 清算獎勵設 8% 大約會是 121 顆
