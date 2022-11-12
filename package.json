@@ -18,7 +18,9 @@
     "typechain": "^8.1.0"
   },
   "dependencies": {
+    "@ethersproject/logger": "^5.7.0",
     "@openzeppelin/contracts": "^4.7.3",
+    "bignumber.js": "^9.1.0",
     "dotenv": "^16.0.3"
   }
 }
